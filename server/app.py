@@ -3,6 +3,7 @@ from flask import Flask, request
 import logging
 from opentelemetry import trace
 
+# Initialize the tracer
 trace = trace.get_tracer("dice-roller.tracer")
 
 app = Flask(__name__)
