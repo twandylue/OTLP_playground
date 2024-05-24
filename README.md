@@ -1,6 +1,6 @@
 # OPTL\_playground
 
-My OpenTelemetry Playground. For learning and testing purposes.
+My OpenTelemetry Playground. For learning and testing purposes. Tracing between multiple services.
 
 ## How to run
 
@@ -9,7 +9,7 @@ $ python -m pip install -r requirements.txt
 ...(snip)
 ```
 
-### On server side
+### On server 1
 
 ```consle
 $ export OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
@@ -19,6 +19,19 @@ opentelemetry-instrument \
     --logs_exporter console \
     --service_name dice-server \
     flask run -p 8080
+...(snip)
+```
+
+### On server 2
+
+```consle
+$ export OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
+opentelemetry-instrument \
+    --traces_exporter console \
+    --metrics_exporter console \
+    --logs_exporter console \
+    --service_name dice-server \
+    flask run -p 8081
 ...(snip)
 ```
 
