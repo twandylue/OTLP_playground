@@ -4,6 +4,11 @@ My OpenTelemetry Playground. For learning and testing purposes.
 
 ## How to run
 
+```console
+$ python -m pip install -r requirements.txt
+...(snip)
+```
+
 ### On server side
 
 ```consle
