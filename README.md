@@ -1,6 +1,3 @@
-# OPTL_playground
-OpenTelemetry Playground
-=======
 # OPTL\_playground
 
 My OpenTelemetry Playground. For learning and testing purposes.
