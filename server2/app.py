@@ -1,3 +1,4 @@
+# NOTE: This one is the reciver service.
 from flask import Flask, request
 from opentelemetry import trace, baggage
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator

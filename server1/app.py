@@ -1,3 +1,4 @@
+# NOTE This one is the sender service
 from flask import Flask
 import requests
 from opentelemetry import trace, propagators, baggage
@@ -6,10 +7,9 @@ from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, BatchSpanProcessor
 
-# Initialize the tracer
-
 app = Flask(__name__)
 
+# Initialize the tracer
 trace.set_tracer_provider(TracerProvider())
 trace.get_tracer_provider().add_span_processor(
     BatchSpanProcessor(ConsoleSpanExporter())
