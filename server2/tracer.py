@@ -5,7 +5,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, BatchSpanProcessor
 
 
-def init_tracer() -> trace.Tracer:
+def init_tracer(debug: bool = False) -> trace.Tracer:
     """
     Initialize the tracer
     """
@@ -26,12 +26,13 @@ def init_tracer() -> trace.Tracer:
     # otlp_exporter = OTLPSpanExporter(endpoint="localhost:4317")
 
     # NOTE: Create multiple span processors for different exporters with TracerProvider
-    console_processor: BatchSpanProcessor = BatchSpanProcessor(console_exporter)
-    # otlp_processor = BatchSpanProcessor(otlp_exporter)
+    if debug:
+        console_processor: BatchSpanProcessor = BatchSpanProcessor(console_exporter)
+        # otlp_processor = BatchSpanProcessor(otlp_exporter)
 
-    # NOTE: Register the span processors with TracerProvider
-    traceProvider.add_span_processor(console_processor)
-    # traceProvider.add_span_processor(otlp_processor)
+        # NOTE: Register the span processors with TracerProvider
+        traceProvider.add_span_processor(console_processor)
+        # traceProvider.add_span_processor(otlp_processor)
 
     # reader = PeriodicExportingMetricReader(
     #     OTLPExporter(endpoint="localhost:4317/v1/metrics"),
