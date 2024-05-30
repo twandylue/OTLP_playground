@@ -1,5 +1,3 @@
-# NOTE: Initialize the tracer
-# Description: Middleware for the application
 from opentelemetry import trace, baggage
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, BatchSpanProcessor

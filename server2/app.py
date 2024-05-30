@@ -5,12 +5,12 @@ from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapProp
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, BatchSpanProcessor
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
-from wsgi import OtlpMiddleware
+from wsgi import OptlMiddleware
 
 app = Flask(__name__)
 
 # calling the middleware
-app.wsgi_app = OtlpMiddleware(app.wsgi_app)
+app.wsgi_app = OptlMiddleware(app.wsgi_app)
 
 
 @app.route("/")

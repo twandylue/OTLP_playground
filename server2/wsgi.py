@@ -1,4 +1,3 @@
-# Description: Middleware for the application
 from opentelemetry import trace, baggage
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
@@ -6,7 +5,7 @@ from tracer import init_tracer
 from werkzeug.wrappers import Request, Response, ResponseStream
 
 
-class OtlpMiddleware:
+class OptlMiddleware:
     """
     Middleware for the application to handle the incoming request with OTLP headers
     """
@@ -56,7 +55,7 @@ from flask import Flask, request
 @pytest.fixture
 def app():
     app: Flask = Flask(__name__)
-    app.wsgi_app = OtlpMiddleware(app.wsgi_app)
+    app.wsgi_app = OptlMiddleware(app.wsgi_app)
 
     @app.route("/echo")
     def echo() -> str:
