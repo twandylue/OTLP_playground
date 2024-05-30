@@ -6,7 +6,7 @@ from tracer import init_tracer
 from werkzeug.wrappers import Request, Response, ResponseStream
 
 
-class otlp_middleware:
+class OtlpMiddleware:
     """
     Middleware for the application to handle the incoming request with OTLP headers
     """

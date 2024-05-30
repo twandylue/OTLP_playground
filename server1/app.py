@@ -22,6 +22,8 @@ tracer = trace.get_tracer(__name__)
 def hello():
     with tracer.start_as_current_span("hello") as span:
         ctx = baggage.set_baggage("hello", "world")
+        # NOTE: Add multiple baggage items
+        ctx = baggage.set_baggage("howdy2", "world", context=ctx)
 
         headers = {}
         W3CBaggagePropagator().inject(headers, ctx)
