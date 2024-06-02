@@ -1,6 +1,8 @@
 from opentelemetry import trace, baggage
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 
 
 def init_tracer(debug: bool = False) -> trace.Tracer:
@@ -8,29 +10,29 @@ def init_tracer(debug: bool = False) -> trace.Tracer:
     Initialize the tracer
     """
 
-    # resource: Resource = Resource(
-    #     attributes={
-    #         SERVICE_NAME: "otel-collector",
-    #     }
-    # )
+    resource: Resource = Resource(
+        attributes={
+            SERVICE_NAME: "andylu-http-example",
+        }
+    )
 
     # NOTE: Initialize the tracer
-    traceProvider: TracerProvider = TracerProvider()
-    # traceProvider = TracerProvider(resource=resource)
+    traceProvider = TracerProvider(resource=resource)
     trace.set_tracer_provider(traceProvider)
 
     # NOTE: Create multiple exporters and we will use console exporter for debugging
-    console_exporter: ConsoleSpanExporter = ConsoleSpanExporter()
-    # otlp_exporter = OTLPSpanExporter(endpoint="localhost:4317")
+    # console_exporter: ConsoleSpanExporter = ConsoleSpanExporter()
+    otlp_exporter = OTLPSpanExporter(endpoint="localhost:4317")
+    # textfile_exporter: TextFileSpanExporter = TextFileSpanExporter()
 
     # NOTE: Create multiple span processors for different exporters with TracerProvider
     if debug:
-        console_processor: BatchSpanProcessor = BatchSpanProcessor(console_exporter)
-        # otlp_processor = BatchSpanProcessor(otlp_exporter)
+        # console_processor: BatchSpanProcessor = BatchSpanProcessor(console_exporter)
+        otlp_processor: BatchSpanProcessor = BatchSpanProcessor(otlp_exporter)
 
         # NOTE: Register the span processors with TracerProvider
-        traceProvider.add_span_processor(console_processor)
-        # traceProvider.add_span_processor(otlp_processor)
+        # traceProvider.add_span_processor(console_processor)
+        traceProvider.add_span_processor(otlp_processor)
 
     # reader = PeriodicExportingMetricReader(
     #     OTLPExporter(endpoint="localhost:4317/v1/metrics"),

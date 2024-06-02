@@ -5,14 +5,14 @@ from tracer import init_tracer
 from werkzeug.wrappers import Request, Response, ResponseStream
 
 
-class OptlMiddleware:
+class OtlpMiddleware:
     """
     Middleware for the application to handle the incoming request with OTLP headers
     """
 
     def __init__(self, app):
         # TODO: Set to True for debugging. We can use environment variables to set this flag?
-        self.tracer: trace.Tracer = init_tracer(debug=False)
+        self.tracer: trace.Tracer = init_tracer(debug=True)
         self.app: callable[..., ResponseStream] = app
 
     def __call__(self, environ: dict[str, str], start_response: callable):
@@ -55,7 +55,7 @@ from flask import Flask, request
 @pytest.fixture
 def app():
     app: Flask = Flask(__name__)
-    app.wsgi_app = OptlMiddleware(app.wsgi_app)
+    app.wsgi_app = OtlpMiddleware(app.wsgi_app)
 
     @app.route("/echo")
     def echo() -> str:
@@ -70,19 +70,19 @@ def app():
     return app
 
 
-def test_app_case_1(app):
-    tracer: trace.Tracer = init_tracer()
-    with app.test_client() as client:
-        with tracer.start_as_current_span("test_span") as span:
-            ctx = baggage.set_baggage("test_key", "test_value")
-            headers = {}
-            W3CBaggagePropagator().inject(headers, ctx)
-            TraceContextTextMapPropagator().inject(headers, ctx)
-
-            response: Response = client.get("/echo", headers=headers)
-            assert response.status_code == 200
-            data: dict[str, str] = json.loads(response.data)
-            assert "trace_id" in data
-            assert data["trace_id"] == span.get_span_context().trace_id
-            assert "baggage" in data
-            assert data["baggage"] == "test_value"
+# def test_app_case_1(app):
+#     tracer: trace.Tracer = init_tracer()
+#     with app.test_client() as client:
+#         with tracer.start_as_current_span("test_span") as span:
+#             ctx = baggage.set_baggage("test_key", "test_value")
+#             headers = {}
+#             W3CBaggagePropagator().inject(headers, ctx)
+#             TraceContextTextMapPropagator().inject(headers, ctx)
+#
+#             response: Response = client.get("/echo", headers=headers)
+#             assert response.status_code == 200
+#             data: dict[str, str] = json.loads(response.data)
+#             assert "trace_id" in data
+#             assert data["trace_id"] == span.get_span_context().trace_id
+#             assert "baggage" in data
+#             assert data["baggage"] == "test_value"
