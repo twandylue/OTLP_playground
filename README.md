@@ -52,15 +52,26 @@ This would output the log with WARNING level of the server 2 into `app.log` file
 
 ```consle
 cd ./server2
+export ENV=DEV
 $ python3 app.py
 (...snip)
 ```
+
+The log file would be created in the same directory.
 
 ### On client side
 
 ```console
 $ curl http://localhost:8080/rolldice
 Hell from API 1! Response from API 2: Hello from API 2!
+```
+
+## How to run the unit tests
+
+```console
+export ENV=TEST
+$ pytest wsgi.py
+(...snip)
 ```
 
 ## References

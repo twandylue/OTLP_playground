@@ -5,7 +5,7 @@ from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExport
 from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 
 
-def init_tracer(debug: bool = False) -> trace.Tracer:
+def init_tracer() -> trace.Tracer:
     """
     Initialize the tracer
     """
@@ -20,13 +20,16 @@ def init_tracer(debug: bool = False) -> trace.Tracer:
     traceProvider = TracerProvider(resource=resource)
     trace.set_tracer_provider(traceProvider)
 
-    # NOTE: Create multiple exporters and we will use console exporter for debugging
     # console_exporter: ConsoleSpanExporter = ConsoleSpanExporter()
     otlp_exporter = OTLPSpanExporter(endpoint="localhost:4317")
-    # textfile_exporter: TextFileSpanExporter = TextFileSpanExporter()
 
-    # NOTE: Create multiple span processors for different exporters with TracerProvider
-    if debug:
+    # Get the environment variable to indicate the application mode
+    import os
+
+    env = os.getenv("ENV", "Dev")
+    if env == "DEV":
+        # NOTE: Create multiple span processors for different exporters with TracerProvider
+        print("Running in Dev mode")
         # console_processor: BatchSpanProcessor = BatchSpanProcessor(console_exporter)
         otlp_processor: BatchSpanProcessor = BatchSpanProcessor(otlp_exporter)
 

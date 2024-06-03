@@ -5,7 +5,7 @@ from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapProp
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, BatchSpanProcessor
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
-from wsgi import OtlpMiddleware
+from middleware import OtlpMiddleware
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -45,8 +45,8 @@ app.wsgi_app = OtlpMiddleware(app.wsgi_app)
 def hello():
     environ: dict[str, str] = request.environ
     # print(f"Received environ: {environ}")
-    tracer: trace.Tracer = environ["otlp.tracer"]
-    ctx: trace.SpanContext = environ["otlp.context"]
+    tracer: trace.Tracer = environ.get("otlp.tracer", None)
+    ctx: trace.SpanContext = environ.get("otlp.context", None)
     # Reuse the context to create a new span
     with tracer.start_span("hello_span", context=ctx):
         logging.info(f"Baggage: {baggage.get_baggage('hello', ctx)}")
