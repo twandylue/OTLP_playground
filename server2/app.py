@@ -46,10 +46,16 @@ def hello():
     environ: dict[str, str] = request.environ
     # print(f"Received environ: {environ}")
     tracer: trace.Tracer = environ.get("otlp.tracer", None)
-    ctx: trace.SpanContext = environ.get("otlp.context", None)
+    if tracer is None:
+        return "No tracer found in the environment"
+
     # Reuse the context to create a new span
-    with tracer.start_span("hello_span", context=ctx):
-        logging.info(f"Baggage: {baggage.get_baggage('hello', ctx)}")
+    with tracer.start_as_current_span("hello_span") as span:
+        # get the baggage from context
+        if "otlp.context" in environ:
+            ctx = environ["otlp.context"]
+            print(f"Received bag in hello: {baggage.get_baggage('hello', ctx)}")
+
         return f"{howdy()} from API 2!"
 
 

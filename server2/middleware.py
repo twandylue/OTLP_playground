@@ -19,28 +19,25 @@ class OtlpMiddleware:
         headers: dict[str, str] = request.headers
         # print(f"Received headers: {headers}")
 
-        carrier: dict[str, str] = {"traceparent": headers["Traceparent"]}
-        ctx: trace.SpanContext = TraceContextTextMapPropagator().extract(
-            carrier=carrier
-        )
-        # print(f"Received context: {ctx}")
+        if "Traceparent" in headers:
+            ctx: trace.SpanContext = TraceContextTextMapPropagator().extract(
+                carrier={"traceparent": headers["Traceparent"]}
+            )
+            if "Baggage" in headers:
+                ctx = W3CBaggagePropagator().extract({"baggage": headers["Baggage"]})
+            # print(f"Received context: {ctx}")
 
-        b2: dict[str, str] = {"baggage": headers["Baggage"]}
-        ctx2: trace.SpanContext = W3CBaggagePropagator().extract(b2)
-        # print(f"Received context2: {ctx2}")
+            # Reuse the context to create a new span
+            with self.tracer.start_as_current_span(
+                "middleware_span", context=ctx, kind=trace.SpanKind.SERVER
+            ):
+                # NOTE: Set the tracer in the environment for context propagation
+                environ["otlp.tracer"] = self.tracer
+                environ["otlp.context"] = ctx
 
-        # # Start a new span
-        # with tracer.start_span("api2_span", context=ctx2):
-        #     print(baggage.get_baggage("hello", ctx2))
-        #     return "Hello from API 2!"
+                return self.app(environ, start_response)
 
-        # Reuse the context to create a new span
-        with self.tracer.start_span("api2_middleware_span", context=ctx2):
-            # NOTE: Set the tracer in the environment for context propagation
-            environ["otlp.tracer"] = self.tracer
-            environ["otlp.context"] = ctx2
-
-            return self.app(environ, start_response)
+        return self.app(environ, start_response)
 
 
 """
@@ -60,7 +57,7 @@ def app():
     def echo() -> str:
         environ: dict[str, str] = request.environ
         tracer: trace.Tracer = environ["otlp.tracer"]
-        with tracer.start_span("echo_span") as span:
+        with tracer.start_as_current_span("echo_span") as span:
             trace_id: str = span.get_span_context().trace_id
             ctx: trace.SpanContext = environ["otlp.context"]
             bag: str = baggage.get_baggage("test_key", ctx)
