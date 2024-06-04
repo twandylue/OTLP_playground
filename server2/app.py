@@ -54,7 +54,7 @@ def hello():
         # get the baggage from context
         if "otlp.context" in environ:
             ctx = environ["otlp.context"]
-            print(f"Received bag in hello: {baggage.get_baggage('hello', ctx)}")
+            # print(f"Received bag in hello: {baggage.get_baggage('hello', ctx)}")
 
         return f"{howdy()} from API 2!"
 

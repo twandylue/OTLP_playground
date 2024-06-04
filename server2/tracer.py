@@ -17,7 +17,7 @@ def init_tracer() -> trace.Tracer:
     )
 
     # NOTE: Initialize the tracer
-    traceProvider = TracerProvider(resource=resource)
+    traceProvider: TracerProvider = TracerProvider(resource=resource)
     trace.set_tracer_provider(traceProvider)
 
     # console_exporter: ConsoleSpanExporter = ConsoleSpanExporter()

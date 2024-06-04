@@ -12,9 +12,11 @@ class OtlpMiddleware:
 
     def __init__(self, app):
         self.tracer: trace.Tracer = init_tracer()
-        self.app: callable[..., ResponseStream] = app
+        self.app = app
 
-    def __call__(self, environ: dict[str, str], start_response: callable):
+    def __call__(
+        self, environ: dict[str, str], start_response: callable
+    ) -> ResponseStream:
         request: Request = Request(environ)
         headers: dict[str, str] = request.headers
         # print(f"Received headers: {headers}")
