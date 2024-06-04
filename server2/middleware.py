@@ -32,10 +32,11 @@ class OtlpMiddleware:
             # Reuse the context to create a new span
             with self.tracer.start_as_current_span(
                 "middleware_span", context=ctx, kind=trace.SpanKind.SERVER
-            ):
+            ) as span:
                 # NOTE: Set the tracer in the environment for context propagation
-                environ["otlp.tracer"] = self.tracer
                 environ["otlp.context"] = ctx
+                bag: str = baggage.get_baggage("hello", ctx)
+                span.set_attribute("hello", bag)
 
                 return self.app(environ, start_response)
 

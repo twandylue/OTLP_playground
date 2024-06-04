@@ -45,7 +45,7 @@ app.wsgi_app = OtlpMiddleware(app.wsgi_app)
 def hello():
     environ: dict[str, str] = request.environ
     # print(f"Received environ: {environ}")
-    tracer: trace.Tracer = environ.get("otlp.tracer", None)
+    tracer: trace.Tracer = trace.get_tracer(__name__)
     if tracer is None:
         return "No tracer found in the environment"
 
@@ -54,7 +54,7 @@ def hello():
         # get the baggage from context
         if "otlp.context" in environ:
             ctx = environ["otlp.context"]
-            # print(f"Received bag in hello: {baggage.get_baggage('hello', ctx)}")
+            print(f"Received bag in hello: {baggage.get_baggage('hello', ctx)}")
 
         return f"{howdy()} from API 2!"
 
