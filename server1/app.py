@@ -2,6 +2,7 @@
 from flask import Flask
 import requests
 from opentelemetry import trace, propagators, baggage
+from opentelemetry.context.context import Context
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.sdk.trace import TracerProvider
@@ -18,12 +19,47 @@ trace.get_tracer_provider().add_span_processor(
 tracer = trace.get_tracer(__name__)
 
 
-@app.route("/")
-def hello():
-    with tracer.start_as_current_span("hello") as span:
-        ctx = baggage.set_baggage("hello", "world")
+@app.route("/test_1")
+def test_tracecontext():
+    """
+    With only TraceContextTextMapPropagator
+    """
+    with tracer.start_as_current_span("test_1") as span:
+        headers = {}
+        TraceContextTextMapPropagator().inject(headers)
+        print(headers)
+
+        response = requests.get("http://localhost:5002/", headers=headers)
+        return f"test_1: {response.text}"
+
+
+@app.route("/test_2")
+def test_w3c():
+    """
+    With only W3CBaggagePropagator
+    """
+    with tracer.start_as_current_span("test_2") as span:
         # NOTE: Add multiple baggage items
-        ctx = baggage.set_baggage("howdy2", "world", context=ctx)
+        ctx: Context = baggage.set_baggage("hello", "world")
+        ctx: Context = baggage.set_baggage("howdy2", "world", context=ctx)
+
+        headers = {}
+        W3CBaggagePropagator().inject(headers, ctx)
+        print(headers)
+
+        response = requests.get("http://localhost:5002/", headers=headers)
+        return f"test_2: {response.text}"
+
+
+@app.route("/test_3")
+def test_both():
+    """
+    With W3CBaggagePropagator and TraceContextTextMapPropagator
+    """
+    with tracer.start_as_current_span("test_3") as span:
+        # NOTE: Add multiple baggage items
+        ctx: Context = baggage.set_baggage("hello", "world")
+        ctx: Context = baggage.set_baggage("howdy2", "world", context=ctx)
 
         headers = {}
         W3CBaggagePropagator().inject(headers, ctx)
@@ -31,7 +67,7 @@ def hello():
         print(headers)
 
         response = requests.get("http://localhost:5002/", headers=headers)
-        return f"Hell from API 1! Response from API 2: {response.text}"
+        return f"test_3: {response.text}"
 
 
 if __name__ == "__main__":

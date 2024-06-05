@@ -47,7 +47,7 @@ def hello():
     # print(f"Received environ: {environ}")
     tracer: trace.Tracer = trace.get_tracer(__name__)
     if tracer is None:
-        return "No tracer found in the environment"
+        return "Tracer not found"
 
     # Reuse the context to create a new span
     with tracer.start_as_current_span("hello_span") as span:
@@ -60,7 +60,13 @@ def hello():
 
 
 def howdy() -> str:
-    return "Howdy"
+    tracer: trace.Tracer = trace.get_tracer(__name__)
+    if tracer is None:
+        return "Tracer not found"
+
+    with tracer.start_as_current_span("howdy") as span:
+        span.set_attribute("howdy", "in howdy function")
+        return "Howdy"
 
 
 if __name__ == "__main__":

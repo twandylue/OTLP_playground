@@ -1,8 +1,9 @@
+from tracer import init_tracer
+from werkzeug.wrappers import Request, Response, ResponseStream
 from opentelemetry import trace, baggage
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
-from tracer import init_tracer
-from werkzeug.wrappers import Request, Response, ResponseStream
+from opentelemetry.context.context import Context
 
 
 class OtlpMiddleware:
@@ -11,36 +12,35 @@ class OtlpMiddleware:
     """
 
     def __init__(self, app):
-        self.tracer: trace.Tracer = init_tracer()
         self.app = app
 
     def __call__(
         self, environ: dict[str, str], start_response: callable
     ) -> ResponseStream:
+        tracer: trace.Tracer = init_tracer()
         request: Request = Request(environ)
         headers: dict[str, str] = request.headers
-        # print(f"Received headers: {headers}")
 
-        if "Traceparent" in headers:
-            ctx: trace.SpanContext = TraceContextTextMapPropagator().extract(
+        ctx: Optional[Context] = None
+        if "Traceparent" in headers and "Baggage" in headers:
+            ctx = W3CBaggagePropagator().extract({"baggage": headers["Baggage"]})
+        elif "Traceparent" in headers:
+            ctx = TraceContextTextMapPropagator().extract(
                 carrier={"traceparent": headers["Traceparent"]}
             )
-            if "Baggage" in headers:
-                ctx = W3CBaggagePropagator().extract({"baggage": headers["Baggage"]})
-            # print(f"Received context: {ctx}")
+        elif "Baggage" in headers:
+            ctx = W3CBaggagePropagator().extract({"baggage": headers["Baggage"]})
 
-            # Reuse the context to create a new span
-            with self.tracer.start_as_current_span(
-                "middleware_span", context=ctx, kind=trace.SpanKind.SERVER
-            ) as span:
-                # NOTE: Set the tracer in the environment for context propagation
-                environ["otlp.context"] = ctx
-                bag: str = baggage.get_baggage("hello", ctx)
-                span.set_attribute("hello", bag)
+        # Reuse the context to create a new span
+        with tracer.start_as_current_span(
+            "middleware_span", context=ctx, kind=trace.SpanKind.SERVER
+        ) as span:
+            # NOTE: Set the tracer in the environment for context propagation
+            environ["otlp.context"] = ctx
+            bag: str = baggage.get_baggage("hello", ctx)
+            span.set_attribute("hello", bag)
 
-                return self.app(environ, start_response)
-
-        return self.app(environ, start_response)
+            return self.app(environ, start_response)
 
 
 """
@@ -59,7 +59,7 @@ def app():
     @app.route("/echo")
     def echo() -> str:
         environ: dict[str, str] = request.environ
-        tracer: trace.Tracer = environ["otlp.tracer"]
+        tracer: trace.Tracer = trace.get_tracer(__name__)
         with tracer.start_as_current_span("echo_span") as span:
             trace_id: str = span.get_span_context().trace_id
             ctx: trace.SpanContext = environ["otlp.context"]
