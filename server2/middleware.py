@@ -1,4 +1,3 @@
-from tracer import init_tracer
 from werkzeug.wrappers import Request, Response, ResponseStream
 from opentelemetry import trace, baggage
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
@@ -17,7 +16,7 @@ class OtlpMiddleware:
     def __call__(
         self, environ: dict[str, str], start_response: callable
     ) -> ResponseStream:
-        tracer: trace.Tracer = init_tracer()
+        tracer: trace.Tracer = trace.get_tracer(__name__)
         request: Request = Request(environ)
         headers: dict[str, str] = request.headers
 

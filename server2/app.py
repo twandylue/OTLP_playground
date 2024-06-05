@@ -1,5 +1,6 @@
 # NOTE: This one is the receiver service.
 from flask import Flask, request
+from tracer import init_TracerProvider
 from opentelemetry import trace, baggage
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from opentelemetry.sdk.trace import TracerProvider
@@ -35,6 +36,8 @@ def setup_logging():
 
 
 app = Flask(__name__)
+# Initialize TracerProvider
+init_TracerProvider()
 setup_logging()
 
 # calling the middleware
