@@ -1,10 +1,13 @@
 # NOTE: This one is the receiver service.
 from flask import Flask, request
-from tracer import init_TracerProvider
 from opentelemetry import trace, baggage
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import ConsoleSpanExporter, BatchSpanProcessor
+from opentelemetry.sdk.trace.export import (
+    ConsoleSpanExporter,
+    BatchSpanProcessor,
+)
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from middleware import OtlpMiddleware
 import logging
@@ -36,12 +39,15 @@ def setup_logging():
 
 
 app = Flask(__name__)
-# Initialize TracerProvider
-init_TracerProvider()
 setup_logging()
-
+processor: BatchSpanProcessor = BatchSpanProcessor(ConsoleSpanExporter())
 # calling the middleware
-app.wsgi_app = OtlpMiddleware(app.wsgi_app)
+app.wsgi_app = OtlpMiddleware(app.wsgi_app, processor=processor)
+
+
+# @app.before_request
+# def before_request():
+#     print("Before request")
 
 
 @app.route("/")
@@ -70,6 +76,14 @@ def howdy() -> str:
     with tracer.start_as_current_span("howdy") as span:
         span.set_attribute("howdy", "in howdy function")
         return "Howdy"
+
+
+# @app.route("/test_1")
+# def see_spans():
+#     for span in exporter.get_finished_spans():
+#         print(span.to_json())
+#     # print(exporter.get_finished_spans()[0].to_json())
+#     return "Spans"
 
 
 if __name__ == "__main__":
