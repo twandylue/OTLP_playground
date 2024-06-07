@@ -20,10 +20,6 @@ class OtlpMiddleware:
     def __call__(
         self, environ: dict[str, str], start_response: callable
     ) -> ResponseStream:
-        # request url
-        print(f"Request URL: {environ['PATH_INFO']}")
-        # request method
-        print(f"Request Method: {environ['REQUEST_METHOD']}")
         tracer: trace.Tracer = trace.get_tracer(__name__)
         request: Request = Request(environ)
         headers: dict[str, str] = request.headers
@@ -60,7 +56,6 @@ import json
 from flask import Flask, request
 
 
-# @pytest.fixture
 def tset_middleware_app(proce: SpanProcessor) -> Flask:
     app: Flask = Flask(__name__)
     app.wsgi_app = OtlpMiddleware(app.wsgi_app, processor=proce)
