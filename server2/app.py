@@ -41,13 +41,7 @@ def setup_logging():
 app = Flask(__name__)
 setup_logging()
 processor: BatchSpanProcessor = BatchSpanProcessor(ConsoleSpanExporter())
-# calling the middleware
 app.wsgi_app = OtlpMiddleware(app.wsgi_app, processor=processor)
-
-
-# @app.before_request
-# def before_request():
-#     print("Before request")
 
 
 @app.route("/")
@@ -55,11 +49,7 @@ def hello():
     environ: dict[str, str] = request.environ
     # print(f"Received environ: {environ}")
     tracer: trace.Tracer = trace.get_tracer(__name__)
-    if tracer is None:
-        return "Tracer not found"
-
-    # Reuse the context to create a new span
-    with tracer.start_as_current_span("hello_span") as span:
+    with tracer.start_as_current_span("route_span") as span:
         # get the baggage from context
         if "otlp.context" in environ:
             ctx = environ["otlp.context"]
@@ -70,20 +60,16 @@ def hello():
 
 def howdy() -> str:
     tracer: trace.Tracer = trace.get_tracer(__name__)
-    if tracer is None:
-        return "Tracer not found"
 
-    with tracer.start_as_current_span("howdy") as span:
+    with tracer.start_as_current_span("howdy_span") as span:
         span.set_attribute("howdy", "in howdy function")
+        with tracer.start_as_current_span("another_func_span"):
+            another_func()
         return "Howdy"
 
 
-# @app.route("/test_1")
-# def see_spans():
-#     for span in exporter.get_finished_spans():
-#         print(span.to_json())
-#     # print(exporter.get_finished_spans()[0].to_json())
-#     return "Spans"
+def another_func() -> None:
+    print("Another function")
 
 
 if __name__ == "__main__":
