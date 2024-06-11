@@ -63,6 +63,9 @@ def test_both():
 
         headers = {}
         W3CBaggagePropagator().inject(headers, ctx)
+        # NOTE:
+        # traceparent_string = f"00-{format_trace_id(span_context.trace_id)}-{format_span_id(span_context.span_id)}-{span_context.trace_flags:02x}"
+        # ref: https://github.com/open-telemetry/opentelemetry-python/blob/ba22b165471bde2037620f2c850ab648a849fbc0/opentelemetry-api/src/opentelemetry/trace/propagation/tracecontext.py#L103C1-L104C1
         TraceContextTextMapPropagator().inject(headers, ctx)
         print(headers)
 

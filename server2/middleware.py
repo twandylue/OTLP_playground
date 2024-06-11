@@ -20,7 +20,6 @@ class OtlpMiddleware:
     def __call__(
         self, environ: dict[str, str], start_response: callable
     ) -> ResponseStream:
-        tracer: trace.Tracer = trace.get_tracer(__name__)
         request: Request = Request(environ)
         headers: dict[str, str] = request.headers
 
@@ -35,6 +34,7 @@ class OtlpMiddleware:
                 context=ctx,
             )
 
+        tracer: trace.Tracer = trace.get_tracer(__name__)
         # Reuse the context to create a new span
         with tracer.start_as_current_span(
             "middleware_span", context=ctx, kind=trace.SpanKind.SERVER
