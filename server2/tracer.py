@@ -1,9 +1,18 @@
+from typing import Optional
 from opentelemetry import trace, baggage
 from opentelemetry.sdk.trace import TracerProvider, SpanProcessor
 from opentelemetry.sdk.resources import Resource, SERVICE_NAME
+from opentelemetry.sdk.trace.sampling import (
+    Sampler,
+    StaticSampler,
+    Decision,
+    ParentBased,
+)
 
 
-def init_TracerProvider(processor: SpanProcessor = None):
+def init_TracerProvider(
+    processor: Optional[SpanProcessor] = None, sampler: Optional[Sampler] = None
+):
     """
     Initialize TracerProvider
     """
@@ -14,7 +23,8 @@ def init_TracerProvider(processor: SpanProcessor = None):
             attributes={
                 SERVICE_NAME: "andylu-http-example",
             }
-        )
+        ),
+        sampler=sampler,
     )
 
     # NOTE: Register the span processors with TracerProvider

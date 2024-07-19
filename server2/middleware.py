@@ -1,3 +1,4 @@
+from typing import Optional
 from tracer import init_TracerProvider
 from werkzeug.wrappers import Request, Response, ResponseStream
 from opentelemetry import trace, baggage
@@ -5,6 +6,13 @@ from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapProp
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.context.context import Context
 from opentelemetry.sdk.trace import SpanProcessor
+from opentelemetry.trace import NonRecordingSpan, INVALID_SPAN, SpanContext, TraceFlags
+from opentelemetry.sdk.trace.sampling import (
+    Sampler,
+    ParentBased,
+    ALWAYS_OFF,
+    ALWAYS_ON,
+)
 
 
 class OtlpMiddleware:
@@ -12,10 +20,13 @@ class OtlpMiddleware:
     Middleware for the application to handle the incoming request with OTLP headers
     """
 
-    def __init__(self, app, processor: SpanProcessor = None):
+    def __init__(self, app, processor: Optional[SpanProcessor] = None):
         self.app = app
         # Initialize TracerProvider
-        init_TracerProvider(processor)
+        init_TracerProvider(
+            processor=processor,
+            sampler=ParentBased(root=ALWAYS_OFF),
+        )
 
     def __call__(
         self, environ: dict[str, str], start_response: callable
@@ -33,7 +44,9 @@ class OtlpMiddleware:
                 carrier={"baggage": headers["Baggage"]},
                 context=ctx,
             )
-
+        if "Traceparent" not in headers and "Baggage" not in headers:
+            print("Not going to recording span")
+            ctx = trace.set_span_in_context(INVALID_SPAN)
         tracer: trace.Tracer = trace.get_tracer(__name__)
         # Reuse the context to create a new span
         with tracer.start_as_current_span(

@@ -27,36 +27,31 @@ def test_tracecontext():
     with tracer.start_as_current_span("test_1") as span:
         headers = {}
         TraceContextTextMapPropagator().inject(headers)
-        print(headers)
+        print(f"headers: {headers}")
 
         response = requests.get("http://localhost:5002/", headers=headers)
         return f"test_1: {response.text}"
 
 
-@app.route("/test_2")
-def test_w3c():
+@app.route("/test_3")
+def test_no_tracecontext():
     """
-    With only W3CBaggagePropagator
+    Without propagators
     """
-    with tracer.start_as_current_span("test_2") as span:
-        # NOTE: Add multiple baggage items
-        ctx: Context = baggage.set_baggage("hello", "world")
-        ctx: Context = baggage.set_baggage("howdy2", "world", context=ctx)
-
+    with tracer.start_as_current_span("test_3") as span:
         headers = {}
-        W3CBaggagePropagator().inject(headers, ctx)
-        print(headers)
+        print(f"headers: {headers}")
 
         response = requests.get("http://localhost:5002/", headers=headers)
-        return f"test_2: {response.text}"
+        return f"test_3: {response.text}"
 
 
-@app.route("/test_3")
+@app.route("/test_2")
 def test_both():
     """
     With W3CBaggagePropagator and TraceContextTextMapPropagator
     """
-    with tracer.start_as_current_span("test_3") as span:
+    with tracer.start_as_current_span("test_2") as span:
         # NOTE: Add multiple baggage items
         ctx: Context = baggage.set_baggage("hello", "world")
         ctx: Context = baggage.set_baggage("howdy2", "world", context=ctx)
@@ -70,7 +65,26 @@ def test_both():
         print(headers)
 
         response = requests.get("http://localhost:5002/", headers=headers)
-        return f"test_3: {response.text}"
+        return f"test_2: {response.text}"
+
+
+# WARNING: This is invalid operation to just have baggage in headers
+# @app.route("/test_3")
+# def test_w3c():
+#     """
+#     With only W3CBaggagePropagator
+#     """
+#     with tracer.start_as_current_span("test_3") as span:
+#         # NOTE: Add multiple baggage items
+#         ctx: Context = baggage.set_baggage("hello", "world")
+#         ctx: Context = baggage.set_baggage("howdy2", "world", context=ctx)
+#
+#         headers = {}
+#         W3CBaggagePropagator().inject(headers, ctx)
+#         print(headers)
+#
+#         response = requests.get("http://localhost:5002/", headers=headers)
+#         return f"test_3: {response.text}"
 
 
 if __name__ == "__main__":

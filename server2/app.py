@@ -8,6 +8,7 @@ from opentelemetry.sdk.trace.export import (
     BatchSpanProcessor,
 )
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from middleware import OtlpMiddleware
 import logging
@@ -39,7 +40,7 @@ def setup_logging():
 
 
 app = Flask(__name__)
-setup_logging()
+# seup_logging()
 processor: BatchSpanProcessor = BatchSpanProcessor(ConsoleSpanExporter())
 app.wsgi_app = OtlpMiddleware(app.wsgi_app, processor=processor)
 
@@ -47,10 +48,8 @@ app.wsgi_app = OtlpMiddleware(app.wsgi_app, processor=processor)
 @app.route("/")
 def hello():
     environ: dict[str, str] = request.environ
-    # print(f"Received environ: {environ}")
     tracer: trace.Tracer = trace.get_tracer(__name__)
     with tracer.start_as_current_span("route_span") as span:
-        # get the baggage from context
         if "otlp.context" in environ:
             ctx = environ["otlp.context"]
             print(f"Received bag in hello: {baggage.get_baggage('hello', ctx)}")
