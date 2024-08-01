@@ -1,6 +1,7 @@
 # NOTE This one is the sender service
 from flask import Flask
 import requests
+from opentelemetry.trace import SpanContext, NonRecordingSpan, TraceFlags
 from opentelemetry import trace, propagators, baggage
 from opentelemetry.context.context import Context
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
@@ -33,19 +34,6 @@ def test_tracecontext():
         return f"test_1: {response.text}"
 
 
-@app.route("/test_3")
-def test_no_tracecontext():
-    """
-    Without propagators
-    """
-    with tracer.start_as_current_span("test_3") as span:
-        headers = {}
-        print(f"headers: {headers}")
-
-        response = requests.get("http://localhost:5002/", headers=headers)
-        return f"test_3: {response.text}"
-
-
 @app.route("/test_2")
 def test_both():
     """
@@ -66,6 +54,42 @@ def test_both():
 
         response = requests.get("http://localhost:5002/", headers=headers)
         return f"test_2: {response.text}"
+
+
+@app.route("/test_3")
+def test_no_tracecontext():
+    """
+    Without propagators
+    """
+    with tracer.start_as_current_span("test_3") as span:
+        headers = {}
+        print(f"headers: {headers}")
+
+        response = requests.get("http://localhost:5002/", headers=headers)
+        return f"test_3: {response.text}"
+
+
+@app.route("/test_4")
+def test_no_trace_flag():
+    """
+    Without propagators
+    """
+    with tracer.start_as_current_span("test_3") as span:
+        span_context: SpanContext = span.get_span_context()
+        new_span_context: SpanContext = SpanContext(
+            trace_id=span_context.trace_id,
+            span_id=span_context.span_id,
+            is_remote=True,
+            # trace_flags=TraceFlags(0x01),
+            trace_flags=TraceFlags(0x00),
+        )
+        ctx = trace.set_span_in_context(NonRecordingSpan(new_span_context))
+        headers = {}
+        TraceContextTextMapPropagator().inject(headers, context=ctx)
+        print(f"headers: {headers}")
+
+        response = requests.get("http://localhost:5002/", headers=headers)
+        return f"test_4: {response.text}"
 
 
 # WARNING: This is invalid operation to just have baggage in headers

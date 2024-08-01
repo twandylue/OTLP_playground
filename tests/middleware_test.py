@@ -8,7 +8,7 @@ from middleware import OtlpMiddleware
 import pytest
 from typing import Optional
 from opentelemetry import trace, baggage
-from opentelemetry.trace import SpanContext
+from opentelemetry.trace import SpanContext, NonRecordingSpan, TraceFlags
 from opentelemetry.context import Context
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
@@ -52,15 +52,22 @@ def test_middleware_case_1():
     tracer: trace.Tracer = trace.get_tracer(__name__)
     with app.test_client() as client:
         with tracer.start_as_current_span("test_span") as span:
-            ctx = baggage.set_baggage("test_key_1", "test_value_1")
+            # NOTE: set the trace_flags to 1 manually because we use the sampler in the middleware,
+            # and it will make every trace_flags to 0 (span.is_recording() = False)
+            span_context: SpanContext = span.get_span_context()
+            new_span_context: SpanContext = SpanContext(
+                trace_id=span_context.trace_id,
+                span_id=span_context.span_id,
+                is_remote=True,
+                trace_flags=TraceFlags(0x01),
+                # trace_flags=TraceFlags(0x00),
+            )
+            ctx = trace.set_span_in_context(NonRecordingSpan(new_span_context))
+            ctx = baggage.set_baggage("test_key_1", "test_value_1", context=ctx)
             ctx = baggage.set_baggage("test_key_2", "test_value_2", context=ctx)
             headers = {}
             W3CBaggagePropagator().inject(headers, ctx)
             TraceContextTextMapPropagator().inject(headers, ctx)
-            # NOTE: set the trace_flags to 1 manually because we use the sampler in the middleware, and it will make every trace_flags to 0 (span.is_recording() = False)
-            n = list(headers["traceparent"])
-            n[-1] = "1"
-            headers["traceparent"] = "".join(n)
 
             response: Response = client.get("/echo", headers=headers)
 
@@ -148,12 +155,19 @@ def test_middleware_case_3():
     tracer: trace.Tracer = trace.get_tracer(__name__)
     with app.test_client() as client:
         with tracer.start_as_current_span("test_span") as span:
+            # NOTE: set the trace_flags to 1 manually because we use the sampler in the middleware,
+            # and it will make every trace_flags to 0 (span.is_recording() = False)
+            span_context: SpanContext = span.get_span_context()
+            new_span_context: SpanContext = SpanContext(
+                trace_id=span_context.trace_id,
+                span_id=span_context.span_id,
+                is_remote=True,
+                trace_flags=TraceFlags(0x01),
+                # trace_flags=TraceFlags(0x00),
+            )
+            ctx = trace.set_span_in_context(NonRecordingSpan(new_span_context))
             headers = {}
-            TraceContextTextMapPropagator().inject(headers)
-            # NOTE: set the trace_flags to 1 manually because we use the sampler in the middleware, and it will make every trace_flags to 0 (span.is_recording() = False)
-            n = list(headers["traceparent"])
-            n[-1] = "1"
-            headers["traceparent"] = "".join(n)
+            TraceContextTextMapPropagator().inject(headers, context=ctx)
 
             response: Response = client.get("/echo", headers=headers)
 
